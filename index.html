@@ -11,23 +11,40 @@
     <link rel="manifest" href="manifest.json" />
   </head>
   <body>
-    <h3>Hello PWA Demo</h3>
+    <div>Hello PWA Manifest Demo<div>
+    <button hidden id="installBtn">安装应用</button>
     <script>
-      //检测浏览器是否支持SW
-      if (navigator.serviceWorker != null) {
-        navigator.serviceWorker.register('./sw.js').then(registartion => {
-          console.log('支持sw:', registartion.scope)
-        })
-      }
-      // 「弹出添加到主屏对话框」事件
-      window.addEventListener('beforeinstallprompt', event => {
-        // 这个 `event.userChoice` 是一个 Promise ，在用户选择后 resolve
-        event.userChoice.then(result => {
-          console.log(result.outcome)
-          // 'accepted': 添加到主屏
-          // 'dismissed': 用户不想理你并向你扔了个取消
-        })
-      })
+      window.addEventListener('load', function() {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('./sw.js');
+        }
+        let appPromptEvent = null;
+        const installBtn = document.getElementById('installBtn');
+        window.addEventListener('beforeinstallprompt', function(event) {
+          console.log('触发事件：beforeinstallprompt');
+          event.preventDefault();
+          appPromptEvent = event;
+          installBtn.hidden = false;
+          return false;
+        });
+        installBtn.addEventListener('click', function() {
+          if (appPromptEvent !== null) {
+            appPromptEvent.prompt();
+            appPromptEvent.userChoice.then(function(result) {
+              if (result.outcome === 'accepted') {
+                console.log('同意安装应用');
+              } else {
+                console.log('不同意安装应用');
+              }
+              appPromptEvent = null;
+            });
+          }
+        });
+        window.addEventListener('appinstalled', function() {
+          console.log('应用已安装');
+          installBtn.hidden = true;
+        });
+      });
     </script>
   </body>
 </html>
